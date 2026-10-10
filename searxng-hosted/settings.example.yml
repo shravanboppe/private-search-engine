@@ -1,4 +1,11 @@
-use_default_settings: true
+```yaml
+use_default_settings:
+  engines:
+    keep_only:
+      - wikipedia
+      - wikidata
+      - duckduckgo
+      - brave
 
 general:
   debug: false
@@ -17,3 +24,4 @@ server:
   image_proxy: true
   port: 10000
   bind_address: "0.0.0.0"
+```
