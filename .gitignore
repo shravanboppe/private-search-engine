@@ -17,3 +17,5 @@
 searxng/core-config/settings.yml
 searxng-docker/
 searxng-docker/
+
+searxng-hosted/settings.yml
