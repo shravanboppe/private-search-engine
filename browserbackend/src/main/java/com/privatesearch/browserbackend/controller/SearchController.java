@@ -1,5 +1,10 @@
+
 package com.privatesearch.browserbackend.controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.privatesearch.browserbackend.model.SearchHistory;
 import com.privatesearch.browserbackend.model.User;
 import com.privatesearch.browserbackend.repository.SearchHistoryRepository;
@@ -10,17 +15,20 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.http.MediaType;
+
+import java.util.Map;
 
 @RestController
 public class SearchController {
 
     private final RestClient restClient = RestClient.create();
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final SearchHistoryRepository searchHistoryRepository;
     private final UserRepository userRepository;
 
-    @Value("${SEARXNG_URL:http://localhost:8080}")
-    private String searxngUrl;
+    @Value("${FIRECRAWL_API_KEY}")
+    private String firecrawlApiKey;
 
     public SearchController(
             SearchHistoryRepository searchHistoryRepository,
@@ -36,7 +44,11 @@ public class SearchController {
             @RequestParam(defaultValue = "general") String category,
             @RequestParam(defaultValue = "1") int page,
             Authentication authentication
-    ) {
+    ) throws Exception {
+        if (page < 1) {
+            throw new IllegalArgumentException("Page must be at least 1");
+        }
+
         String email = authentication.getName();
 
         User user = userRepository.findByEmail(email)
@@ -44,20 +56,37 @@ public class SearchController {
 
         searchHistoryRepository.save(new SearchHistory(q, user));
 
-        String url = UriComponentsBuilder
-                .fromUriString(searxngUrl)
-                .path("/search")
-                .queryParam("q", q)
-                .queryParam("categories", category)
-                .queryParam("pageno", page)
-                .queryParam("format", "json")
-                .build()
-                .encode()
-                .toUriString();
-
-        return restClient.get()
-                .uri(url)
+        JsonNode response = restClient.post()
+                .uri("https://api.firecrawl.dev/v2/search")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("Authorization", "Bearer " + firecrawlApiKey)
+                .body(Map.of(
+                        "query", q,
+                        "limit", 20,
+                        "sources", new String[]{"web"}
+                ))
                 .retrieve()
-                .body(String.class);
+                .body(JsonNode.class);
+
+        JsonNode webResults = response.path("data").path("web");
+        int pageSize = 10;
+        int start = (page - 1) * pageSize;
+
+        ArrayNode pageResults = objectMapper.createArrayNode();
+
+        if (webResults.isArray()) {
+            for (int i = start; i < Math.min(start + pageSize, webResults.size()); i++) {
+                pageResults.add(webResults.get(i));
+            }
+        }
+
+        ObjectNode result = objectMapper.createObjectNode();
+        result.put("query", q);
+        result.put("page", page);
+        result.put("pageSize", pageSize);
+        result.put("totalResults", webResults.isArray() ? webResults.size() : 0);
+        result.set("results", pageResults);
+
+        return objectMapper.writeValueAsString(result);
     }
 }
