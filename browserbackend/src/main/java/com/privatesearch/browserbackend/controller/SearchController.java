@@ -1,23 +1,24 @@
-
 package com.privatesearch.browserbackend.controller;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.privatesearch.browserbackend.model.SearchHistory;
-import com.privatesearch.browserbackend.model.User;
-import com.privatesearch.browserbackend.repository.SearchHistoryRepository;
-import com.privatesearch.browserbackend.repository.UserRepository;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestClient;
-import org.springframework.http.MediaType;
 
-import java.util.Map;
+import com.privatesearch.browserbackend.model.SearchHistory;
+import com.privatesearch.browserbackend.model.User;
+import com.privatesearch.browserbackend.repository.SearchHistoryRepository;
+import com.privatesearch.browserbackend.repository.UserRepository;
+
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 @RestController
 public class SearchController {
