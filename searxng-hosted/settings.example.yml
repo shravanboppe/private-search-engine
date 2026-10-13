@@ -18,6 +18,9 @@ server:
   port: 10000
   bind_address: "0.0.0.0"
 
+
 engines:
   - name: bing
+    disabled: false
+  - name: google
     disabled: false
